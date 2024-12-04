@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: abc123abc
+      MYSQL_DATABASE: signup_app
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+
+  backend:
+    build: ./signup-app-backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./signup-app-backend/.env
+    depends_on:
+      - db
+    restart: always
+    entrypoint: >
+      sh -c "
+      until mysqladmin ping -h'mysql' --silent; do
+        echo 'Waiting for database connection...';
+        sleep 5;
+      done;
+      npm start"
+
+  frontend:
+    build: ./signup-app-frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  db_data:
